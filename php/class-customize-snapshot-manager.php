@@ -119,6 +119,7 @@ class Customize_Snapshot_Manager {
 
 		// Preview a Snapshot.
 		add_action( 'after_setup_theme', array( $this, 'set_post_values' ), 1 );
+		add_action( 'init', array( $this, 'set_post_values' ), 1000 );
 		add_action( 'wp_loaded', array( $this, 'preview' ) );
 
 		/*
@@ -532,13 +533,13 @@ class Customize_Snapshot_Manager {
 	 */
 	public function set_post_values() {
 		if ( true === $this->snapshot->is_preview() ) {
+			$current_post_values = $this->customize_manager->unsanitized_post_values();
 			$values = $this->snapshot->values();
 
 			// Register dynamic settings for settings in the snapshot.
 			$this->customize_manager->add_dynamic_settings( array_keys( $values ) );
-
 			foreach ( $this->snapshot->settings() as $setting ) {
-				if ( $this->can_preview( $setting, $values ) ) {
+				if ( ! array_key_exists( $setting->id, $current_post_values ) && $this->can_preview( $setting, $values ) ) {
 					$this->customize_manager->set_post_value( $setting->id, $values[ $setting->id ] );
 				}
 			}
@@ -550,6 +551,7 @@ class Customize_Snapshot_Manager {
 	 */
 	public function preview() {
 		if ( true === $this->snapshot->is_preview() ) {
+			$this->set_post_values();
 
 			// Block the robots.
 			add_action( 'wp_head', 'wp_no_robots' );
